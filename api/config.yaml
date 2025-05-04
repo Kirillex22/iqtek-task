@@ -1,0 +1,11 @@
+db_type: postgresql
+postgres_data:
+  username: postgres
+  password: postgres
+  host: localhost
+  db_name: postgres
+redis_data:
+  host: localhost
+  port: 6379
+  db_idx: 0
+  password: redis
