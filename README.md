@@ -1,1 +1,1 @@
-# iqtech-task
+# iqtek-task
