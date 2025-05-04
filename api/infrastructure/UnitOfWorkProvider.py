@@ -19,8 +19,6 @@ class UnitOfWorkProvider:
             return self._get_postgres_uow()
         elif db_type == DBType.REDIS:
             return self._get_redis_uow()
-        else:
-            raise ValueError(f"Неизвестный тип базы данных: {db_type}. Доступные типы: {DBType}")
 
     def _get_postgres_uow(self) -> PostgresUnitOfWork:
         database_url = self.config.postgres_data.generate_url()

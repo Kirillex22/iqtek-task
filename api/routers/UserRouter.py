@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from dependencies import get_uow
+from dependencies import get_uow, get_user_service
 from domain.base.BaseUnitOfWork import BaseUnitOfWork
 from domain.entities.User import User
 from domain.services.UserService import UserService
@@ -16,8 +16,8 @@ user_router = APIRouter(prefix="/users", tags=["users"])
 async def create_user(
         user: User,
         uow: BaseUnitOfWork = Depends(get_uow),
+        service: UserService = Depends(get_user_service)
 ):
-    service = UserService()
     try:
         await service.create_user(user, uow)
     except UserAlreadyExistsException as e:
@@ -28,8 +28,8 @@ async def create_user(
 async def get_user(
         user_id: str,
         uow: BaseUnitOfWork = Depends(get_uow),
+        service: UserService = Depends(get_user_service)
 ):
-    service = UserService()
     try:
         return await service.get_user(user_id, uow)
     except UserNotExistsException as e:
@@ -40,8 +40,8 @@ async def get_user(
 async def update_user(
         user: User,
         uow: BaseUnitOfWork = Depends(get_uow),
+        service: UserService = Depends(get_user_service)
 ):
-    service = UserService()
     try:
         await service.update_user(user, uow)
     except UserNotExistsException as e:
@@ -52,8 +52,8 @@ async def update_user(
 async def delete_user(
         user_id: str,
         uow: BaseUnitOfWork = Depends(get_uow),
+        service: UserService = Depends(get_user_service)
 ):
-    service = UserService()
     try:
         await service.delete_user(user_id, uow)
     except UserNotExistsException as e:
