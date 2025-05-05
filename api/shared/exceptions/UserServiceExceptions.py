@@ -1,11 +1,8 @@
-from domain.entities.User import User
-
-
 class UserAlreadyExistsException(Exception):
     code = "ALREADY_EXISTS"
 
-    def __init__(self, user: User):
-        super().__init__(f"Пользователь {user} уже существует в БД.")
+    def __init__(self):
+        super().__init__(f"Пользователь уже существует в БД.")
 
 
 class UserNotExistsException(Exception):

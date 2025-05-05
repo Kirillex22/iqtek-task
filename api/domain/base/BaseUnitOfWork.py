@@ -6,19 +6,19 @@ from domain.base.BaseUserRepository import BaseUserRepository
 class BaseUnitOfWork(ABC):
     user_repository: BaseUserRepository
 
-    async def __aenter__(self) -> "BaseUnitOfWork":
+    def __enter__(self) -> "BaseUnitOfWork":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
-            await self.rollback()
+            self.rollback()
         else:
-            await self.commit()
+            self.commit()
 
     @abstractmethod
-    async def commit(self):
+    def commit(self):
         pass
 
     @abstractmethod
-    async def rollback(self):
+    def rollback(self):
         pass

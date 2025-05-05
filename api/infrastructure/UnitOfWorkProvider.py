@@ -1,6 +1,6 @@
 from redis.asyncio import Redis
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlmodel import SQLModel, Session
 
 from config.Config import DBType, Config
 from domain.base.BaseUnitOfWork import BaseUnitOfWork
@@ -23,8 +23,8 @@ class UnitOfWorkProvider:
     def _get_postgres_uow(self) -> PostgresUnitOfWork:
         database_url = self.config.postgres_data.generate_url()
         engine = create_engine(database_url)
-        SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-        session = SessionLocal()
+        SQLModel.metadata.create_all(engine)
+        session = Session(engine)
 
         return PostgresUnitOfWork(session)
 

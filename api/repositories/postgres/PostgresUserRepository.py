@@ -1,31 +1,26 @@
-from typing import Optional
-
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
+from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, select
 
 from domain.base.BaseUserRepository import BaseUserRepository
 from domain.entities.User import User
-from repositories.postgres.Mappers import map_user_model_to_orm
+from repositories.postgres.Mappers import map_user_model_to_orm, map_user_orm_to_model
 from repositories.postgres.orm.UserORM import UserORM
-from shared.exceptions.UserServiceExceptions import UserNotExistsException, UserAlreadyExistsException, \
-    UnknownUserException
+from shared.exceptions.UserServiceExceptions import UserNotExistsException, UnknownUserException
 
 
 class PostgresUserRepository(BaseUserRepository):
     def __init__(self, session: Session):
         self._session = session
 
-    async def create_user(self, user: User) -> None:
+    def create_user(self, user: User) -> None:
         try:
             self._session.add(
                 map_user_model_to_orm(user)
             )
-        except IntegrityError:
-            raise UserAlreadyExistsException(user)
         except SQLAlchemyError:
             raise UnknownUserException()
 
-    async def update_user(self, user: User) -> None:
+    def update_user(self, user: User) -> None:
         user_to_upd: UserORM = self._session.exec(
             select(UserORM).where(UserORM.id == user.id)
         ).first()
@@ -35,14 +30,17 @@ class PostgresUserRepository(BaseUserRepository):
 
         user_to_upd.full_name = user.full_name
 
-    async def get_user(self, user_id: str) -> Optional[User]:
+    def get_user(self, user_id: str) -> User:
         user_to_get: UserORM = self._session.exec(
             select(UserORM).where(UserORM.id == user_id)
         ).first()
 
-        return user_to_get
+        if user_to_get is None:
+            raise UserNotExistsException(user_id)
 
-    async def delete_user(self, user_id: str) -> None:
+        return map_user_orm_to_model(user_to_get)
+
+    def delete_user(self, user_id: str) -> None:
         user_to_del: UserORM = self._session.exec(
             select(UserORM).where(UserORM.id == user_id)
         ).first()

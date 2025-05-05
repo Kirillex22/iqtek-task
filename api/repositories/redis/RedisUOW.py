@@ -9,15 +9,15 @@ class RedisUnitOfWork(BaseUnitOfWork):
         self._redis = redis
         self.user_repository = RedisUserRepository(redis, prefix)
 
-    async def __aenter__(self) -> "RedisUnitOfWork":
+    def __enter__(self) -> "RedisUnitOfWork":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type:
             pass
 
-    async def commit(self):
+    def commit(self):
         pass
 
-    async def rollback(self):
+    def rollback(self):
         pass

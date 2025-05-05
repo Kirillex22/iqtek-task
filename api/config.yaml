@@ -3,7 +3,7 @@ postgres_data:
   username: postgres
   password: postgres
   host: localhost
-  db_name: postgres
+  db_name: test
 redis_data:
   host: localhost
   port: 6379
