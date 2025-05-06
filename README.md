@@ -55,3 +55,4 @@ redis_data:
   db_idx: 0  
   password: null  
 </pre>
+
