@@ -15,7 +15,7 @@ pip install -r requirements.txt
 
 ### Конфигурация базы данных
 
-В каталоге проекта (./api) лежит конфигурации config.yml. Пример содержимого для использования Redis:  
+В каталоге проекта (./api) лежит конфигурации config.yaml. Пример содержимого для использования Redis:  
 
 db_type: redis  
 postgres_data:  
