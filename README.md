@@ -14,6 +14,7 @@
 
 В каталоге проекта (./api) лежит конфигурации config.yaml. Пример содержимого для использования Redis:  
 
+<pre lang="markdown">
 db_type: redis  
 postgres_data:  
   username: postgres  
@@ -25,6 +26,7 @@ redis_data:
   port: 6379  
   db_idx: 0  
   password: null  
+</pre>
 
 ### Запуск  
 Когда все зависимости установлены и Redis (Postgresql) запущен, можно запустить приложение:  
