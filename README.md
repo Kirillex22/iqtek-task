@@ -41,7 +41,8 @@ uvicorn main:app --reload
 который будет доступен по адресу http://127.0.0.1:8000/docs.  
 
 Если вы хотите использовать PostgreSQL вместо Redis, измените конфиг следующим образом:  
- 
+
+<pre lang="markdown">
 db_type: postgres  
 postgres_data:  
   username: postgres  
@@ -53,3 +54,4 @@ redis_data:
   port: 6379  
   db_idx: 0  
   password: null  
+</pre>
