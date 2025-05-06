@@ -15,12 +15,7 @@
 В каталоге проекта (./api) лежит конфигурации config.yaml. Пример содержимого для использования Redis:  
 
 <pre lang="markdown">
-db_type: redis  
-postgres_data:  
-  username: postgres  
-  password: postgres  
-  host: localhost  
-  db_name: test  
+db_type: redis   
 redis_data:  
   host: localhost  
   port: 6379  
@@ -40,7 +35,7 @@ uvicorn main:app --reload
 Приложение доступно по адресу http://127.0.0.1:8000. Вы можете протестировать доступные эндпоинты через Swagger UI,  
 который будет доступен по адресу http://127.0.0.1:8000/docs.  
 
-Если вы хотите использовать PostgreSQL вместо Redis, измените конфиг следующим образом:  
+Если вы хотите использовать PostgreSQL вместо Redis, можно изменить конфиг следующим образом:  
 
 <pre lang="markdown">
 db_type: postgres  
