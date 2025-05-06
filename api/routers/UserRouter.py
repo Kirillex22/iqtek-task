@@ -6,7 +6,7 @@ from domain.entities.User import User
 from domain.services.UserService import UserService
 from shared.exceptions.UserServiceExceptions import (
     UserAlreadyExistsException,
-    UserNotExistsException, UnknownUserException
+    UserNotExistsException
 )
 
 user_router = APIRouter(prefix="/users", tags=["users"])
@@ -21,9 +21,7 @@ def create_user(
     try:
         service.create_user(user, uow)
     except UserAlreadyExistsException as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except UnknownUserException as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=409, detail=str(e))
 
 
 @user_router.get("/{user_id}", response_model=User)
@@ -36,8 +34,6 @@ def get_user(
         return service.get_user(user_id, uow)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except UnknownUserException as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 
 @user_router.put("/", response_model=None)
@@ -50,8 +46,6 @@ def update_user(
         service.update_user(user, uow)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except UnknownUserException as e:
-        raise HTTPException(status_code=400, detail=str(e))
 
 
 @user_router.delete("/{user_id}", status_code=204)
@@ -64,5 +58,3 @@ def delete_user(
         service.delete_user(user_id, uow)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except UnknownUserException as e:
-        raise HTTPException(status_code=400, detail=str(e))

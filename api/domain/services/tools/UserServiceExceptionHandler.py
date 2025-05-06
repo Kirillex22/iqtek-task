@@ -1,5 +1,4 @@
-from shared.exceptions.UserServiceExceptions import UserAlreadyExistsException, UserNotExistsException, \
-    UnknownUserException
+from shared.exceptions.UserServiceExceptions import UserAlreadyExistsException, UserNotExistsException
 
 
 class UserServiceExceptionHandler:
@@ -10,6 +9,3 @@ class UserServiceExceptionHandler:
 
         elif isinstance(exc, UserNotExistsException):
             raise exc
-
-        else:
-            raise UnknownUserException()

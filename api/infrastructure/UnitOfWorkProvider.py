@@ -1,4 +1,6 @@
-from redis.asyncio import Redis
+from typing import Optional, Union
+
+from redis import Redis
 from sqlalchemy import create_engine
 from sqlmodel import SQLModel, Session
 
@@ -9,8 +11,9 @@ from repositories.redis.RedisUOW import RedisUnitOfWork
 
 
 class UnitOfWorkProvider:
-    def __init__(self, config: Config):
+    def __init__(self, config: Config, client: Optional[Union[Session, Redis]] = None):
         self.config = config
+        self.client = client
 
     def get_uow(self) -> BaseUnitOfWork:
         db_type = self.config.db_type
@@ -21,15 +24,20 @@ class UnitOfWorkProvider:
             return self._get_redis_uow()
 
     def _get_postgres_uow(self) -> PostgresUnitOfWork:
-        database_url = self.config.postgres_data.generate_url()
-        engine = create_engine(database_url)
-        SQLModel.metadata.create_all(engine)
-        session = Session(engine)
-
+        if self.client:
+            session = self.client
+        else:
+            database_url = self.config.postgres_data.generate_url()
+            engine = create_engine(database_url)
+            SQLModel.metadata.create_all(engine)
+            session = Session(engine)
         return PostgresUnitOfWork(session)
 
     def _get_redis_uow(self) -> RedisUnitOfWork:
-        redis_url = self.config.redis_data.generate_url()
-        redis = Redis.from_url(redis_url, password=self.config.redis_data.password)
 
+        if self.client:
+            redis = self.client
+        else:
+            redis_url = self.config.redis_data.generate_url()
+            redis = Redis.from_url(redis_url, password=self.config.redis_data.password)
         return RedisUnitOfWork(redis)

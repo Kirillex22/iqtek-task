@@ -1,6 +1,6 @@
 from typing import Optional
 
-from redis.asyncio import Redis
+from redis import Redis
 
 from domain.base.BaseUserRepository import BaseUserRepository
 from domain.entities.User import User
@@ -12,37 +12,38 @@ class RedisUserRepository(BaseUserRepository):
         self.redis = redis
         self.prefix = prefix
 
-    async def _exists(self, key: str) -> bool:
-        exists = bool(await self.redis.exists(key))
-        return exists
+    def _exists(self, key: str) -> bool:
+        return bool(self.redis.exists(key))
 
     def _key(self, user_id: str) -> str:
         return f"{self.prefix}{user_id}"
 
-    async def create_user(self, user: User) -> None:
+    def create_user(self, user: User) -> None:
         key = self._key(user.id)
 
         if self._exists(key):
-            raise UserAlreadyExistsException(user)
-        await self.redis.set(key, user.json())
+            raise UserAlreadyExistsException()
+        self.redis.set(key, user.json())
 
-    async def update_user(self, user: User) -> None:
+    def update_user(self, user: User) -> None:
         key = self._key(user.id)
 
         if not self._exists(key):
             raise UserNotExistsException(user.id)
-        await self.redis.set(key, user.json())
+        self.redis.set(key, user.json())
 
-    async def get_user(self, user_id: str) -> Optional[User]:
+    def get_user(self, user_id: str) -> Optional[User]:
         key = self._key(user_id)
-        data = await self.redis.get(key)
-        if not data:
-            return None
-        return User.parse_raw(data)
+        user = self.redis.get(key)
 
-    async def delete_user(self, user_id: str) -> None:
+        if user is None:
+            raise UserNotExistsException(user_id)
+
+        return User.parse_raw(user)
+
+    def delete_user(self, user_id: str) -> None:
         key = self._key(user_id)
 
         if not self._exists(key):
             raise UserNotExistsException(user_id)
-        await self.redis.delete(key)
+        self.redis.delete(key)

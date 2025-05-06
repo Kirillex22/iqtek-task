@@ -32,8 +32,8 @@ class RedisData(BaseSettings):
 
 class Config(BaseSettings):
     db_type: DBType
-    postgres_data: Optional[PostgresData]
-    redis_data: Optional[RedisData]
+    postgres_data: Optional[PostgresData] = None
+    redis_data: Optional[RedisData] = None
 
     @classmethod
     def from_yaml(cls, path: str) -> "Config":
