@@ -15,7 +15,7 @@ class UnitOfWorkProvider:
         self.config = config
         self.client = client
 
-    def get_uow(self) -> BaseUnitOfWork:
+    def get_uow(self) -> Optional[BaseUnitOfWork]:
         db_type = self.config.db_type
 
         if db_type == DBType.POSTGRESQL:
