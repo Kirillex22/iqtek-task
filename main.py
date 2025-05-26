@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
-from src.plugins.user.routers.UserRouter import user_router
+from src.plugins.user.presentators.UserRouter import user_router
 
 app = FastAPI()
 

@@ -3,6 +3,7 @@ from typing import Optional
 from redis import Redis
 
 from src.common.base.BaseUserRepository import BaseUserRepository
+from src.plugins.user.dto.GetUserDTO import GetUserDTO
 from src.plugins.user.entities.User import User
 from src.common.exceptions.UserServiceExceptions import UserAlreadyExistsException, UserNotExistsException
 
@@ -15,24 +16,27 @@ class RedisUserRepository(BaseUserRepository):
     def _exists(self, key: str) -> bool:
         return bool(self.redis.exists(key))
 
-    def _key(self, user_id: str) -> str:
+    def _key(self, user_id: int) -> str:
         return f"{self.prefix}{user_id}"
 
-    def create_user(self, user: User) -> None:
+    def create_user(self, user: User) -> User:
         key = self._key(user.id)
 
         if self._exists(key):
             raise UserAlreadyExistsException()
         self.redis.set(key, user.json())
+        return User.parse_raw(self.redis.get(self._key(user.id)))
 
-    def update_user(self, user: User) -> None:
+    def update_user(self, user: User) -> User:
         key = self._key(user.id)
 
         if not self._exists(key):
             raise UserNotExistsException(user.id)
         self.redis.set(key, user.json())
+        return User.parse_raw(self.redis.get(self._key(user.id)))
 
-    def get_user(self, user_id: str) -> Optional[User]:
+    def get_user(self, get_model: GetUserDTO) -> Optional[User]:
+        user_id = get_model.id
         key = self._key(user_id)
         user = self.redis.get(key)
 
@@ -41,7 +45,8 @@ class RedisUserRepository(BaseUserRepository):
 
         return User.parse_raw(user)
 
-    def delete_user(self, user_id: str) -> None:
+    def delete_user(self, get_model: GetUserDTO) -> None:
+        user_id = get_model.id
         key = self._key(user_id)
 
         if not self._exists(key):

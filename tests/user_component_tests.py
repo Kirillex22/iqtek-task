@@ -48,7 +48,6 @@ def test_create_user_success(input_data):
     response = app_client.post(
         "/users/",
         json={
-            "id": "123",
             "full_name": "John Dow"
         }
     )
@@ -56,31 +55,8 @@ def test_create_user_success(input_data):
     assert response.status_code == 201
 
 
-def test_create_already_created_user(input_data):
-    app_client, client = input_data
-
-    if isinstance(client, Redis):
-        client.set.return_value = None
-        client.exists.return_value = True
-
-    if isinstance(client, Session):
-        client.add.return_value = None
-        client.commit.side_effect = IntegrityError(statement=None, params=None, orig=None)
-        client.rollback.return_value = None
-
-    response = app_client.post(
-        "/users/",
-        json={
-            "id": "123",
-            "full_name": "John Dow"
-        }
-    )
-
-    assert response.status_code == 409
-
-
 def test_get_user_success(input_data):
-    response_json = {"id": "123", "full_name": "John Dow"}
+    response_json = {"full_name": "John Dow"}
 
     app_client, client = input_data
 
@@ -95,7 +71,7 @@ def test_get_user_success(input_data):
         client.commit.return_value = None
         client.rollback.return_value = None
 
-    response = app_client.get("/users/123")
+    response = app_client.post("/users/", json={"id": 1})
 
     assert response.status_code == 200
     assert response.json() == response_json

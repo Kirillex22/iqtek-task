@@ -2,6 +2,8 @@ from functools import wraps
 from typing import Callable, Optional
 
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
+from src.plugins.user.dto.CreateUserDTO import CreateUserDTO
+from src.plugins.user.dto.GetUserDTO import GetUserDTO
 from src.plugins.user.entities.User import User
 from src.plugins.user.services.tools.UserServiceExceptionHandler import UserServiceExceptionHandler
 
@@ -24,22 +26,25 @@ class UserService:
         self.exception_handler = UserServiceExceptionHandler()
 
     @uow_wrapper
-    def create_user(self, user: User, uow: BaseUnitOfWork) -> None:
+    def create_user(self, create_model: CreateUserDTO, uow: BaseUnitOfWork) -> User:
+        user = User(full_name=create_model.full_name)
         with uow:
-            return uow.user_repository.create_user(user)
+            created_user = uow.user_repository.create_user(user)
+        return created_user
 
     @uow_wrapper
-    def update_user(self, user: User, uow: BaseUnitOfWork) -> None:
+    def update_user(self, user: User, uow: BaseUnitOfWork) -> User:
         with uow:
-            uow.user_repository.update_user(user)
+            updated_user = uow.user_repository.update_user(user)
+        return updated_user
 
     @uow_wrapper
-    def get_user(self, user_id: str, uow: BaseUnitOfWork) -> User:
+    def get_user(self, get_model: GetUserDTO, uow: BaseUnitOfWork) -> User:
         with uow:
-            user = uow.user_repository.get_user(user_id)
+            user = uow.user_repository.get_user(get_model)
         return user
 
     @uow_wrapper
-    def delete_user(self, user_id: str, uow: BaseUnitOfWork) -> None:
+    def delete_user(self, get_model: GetUserDTO, uow: BaseUnitOfWork) -> None:
         with uow:
-            uow.user_repository.delete_user(user_id)
+            uow.user_repository.delete_user(get_model)

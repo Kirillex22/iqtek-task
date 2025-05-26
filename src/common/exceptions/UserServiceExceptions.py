@@ -8,7 +8,7 @@ class UserAlreadyExistsException(Exception):
 class UserNotExistsException(Exception):
     code = "NOT_EXISTS"
 
-    def __init__(self, user_id: str):
+    def __init__(self, user_id: int):
         super().__init__(f"Пользователь {user_id} не найден в БД.")
 
 

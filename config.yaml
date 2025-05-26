@@ -1,4 +1,4 @@
-db_type: redis
+db_type: postgresql
 postgres_data:
   username: postgres
   password: postgres

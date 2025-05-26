@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies import get_uow, get_user_service
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
+from src.plugins.user.dto.CreateUserDTO import CreateUserDTO
+from src.plugins.user.dto.GetUserDTO import GetUserDTO
 from src.plugins.user.entities.User import User
 from src.plugins.user.services.UserService import UserService
 from src.common.exceptions.UserServiceExceptions import (
@@ -12,49 +14,49 @@ from src.common.exceptions.UserServiceExceptions import (
 user_router = APIRouter(prefix="/users", tags=["users"])
 
 
-@user_router.post("/", status_code=status.HTTP_201_CREATED)
+@user_router.post("/", response_model=User)
 def create_user(
-        user: User,
+        create_model: CreateUserDTO,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
     try:
-        service.create_user(user, uow)
+        return service.create_user(create_model, uow)
     except UserAlreadyExistsException as e:
         raise HTTPException(status_code=409, detail=str(e))
 
 
-@user_router.get("/{user_id}", response_model=User)
+@user_router.post("/{user_id}", response_model=User)
 def get_user(
-        user_id: str,
+        get_model: GetUserDTO,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
     try:
-        return service.get_user(user_id, uow)
+        return service.get_user(get_model, uow)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@user_router.put("/", response_model=None)
+@user_router.put("/", response_model=User)
 def update_user(
         user: User,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
     try:
-        service.update_user(user, uow)
+        return service.update_user(user, uow)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
 @user_router.delete("/{user_id}", status_code=204)
 def delete_user(
-        user_id: str,
+        get_model: GetUserDTO,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
     try:
-        service.delete_user(user_id, uow)
+        service.delete_user(get_model, uow)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
