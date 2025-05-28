@@ -17,8 +17,8 @@ class BaseUnitOfWork(ABC):
 
     @abstractmethod
     def commit(self):
-        pass
+        raise NotImplementedError()
 
     @abstractmethod
     def rollback(self):
-        pass
+        raise NotImplementedError()
