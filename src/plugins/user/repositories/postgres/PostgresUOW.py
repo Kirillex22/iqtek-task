@@ -1,5 +1,5 @@
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session
+from sqlalchemy.orm import Session
 
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
 from src.plugins.user.repositories.postgres.PostgresUserRepository import PostgresUserRepository
