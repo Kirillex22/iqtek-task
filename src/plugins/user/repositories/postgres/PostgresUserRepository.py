@@ -1,59 +1,38 @@
 from sqlalchemy.exc import SQLAlchemyError
-from sqlmodel import Session, select
+from sqlalchemy.orm import Session
 
 from src.common.base.BaseUserRepository import BaseUserRepository
-from src.plugins.user.dto.GetUserDTO import GetUserDTO
+from src.plugins.user.dto.CreateUserDTO import CreateUserDTO
+from src.plugins.user.dto.Mappers import map_create_user_dto_to_user, map_user_to_user_dto
+from src.plugins.user.dto.UserDTO import UserDTO
 from src.plugins.user.entities.User import User
-from src.plugins.user.repositories.postgres.Mappers import map_user_model_to_orm, map_user_orm_to_model
-from src.plugins.user.repositories.postgres.orm.UserORM import UserORM
-from src.common.exceptions.UserServiceExceptions import UserNotExistsException, UnknownUserException
+from src.common.exceptions.UserServiceExceptions import UnknownUserException
 
 
 class PostgresUserRepository(BaseUserRepository):
     def __init__(self, session: Session):
         self._session = session
 
-    def create_user(self, user: User) -> User:
+    def create_user(self, user_data: CreateUserDTO) -> UserDTO:
         try:
-            user_orm = map_user_model_to_orm(user)
-            self._session.add(
-                user_orm
-            )
-            self._session.flush()
-            return map_user_orm_to_model(user_orm)
+            user = map_create_user_dto_to_user(user_data)
+            self._session.add(user)
+            self._session.flush() # todo: мб включить autoflush???
+            return map_user_to_user_dto(user)
         except SQLAlchemyError:
             raise UnknownUserException()
 
-    def update_user(self, user: User) -> User:
-        user_to_upd: UserORM = self._session.exec(
-            select(UserORM).where(UserORM.id == user.id)
-        ).first()
-
-        if user_to_upd is None:
-            raise UserNotExistsException(user.id)
-
-        user_to_upd.full_name = user.full_name
+    def update_user(self, user: User) -> UserDTO:
+        self._session.merge(user)
         self._session.flush()
-        return map_user_orm_to_model(user_to_upd)
+        return map_user_to_user_dto(user)
 
-    def get_user(self, get_model: GetUserDTO) -> User:
-        user_id = get_model.id
-        user_to_get: UserORM = self._session.exec(
-            select(UserORM).where(UserORM.id == user_id)
-        ).first()
+    def get_user(self, user_id: int) -> UserDTO | None:
+        fetched_user: User | None = self._session.query(User).filter_by(id=user_id).first()
+        if fetched_user is None:
+            return None
+        return map_user_to_user_dto(fetched_user)
 
-        if user_to_get is None:
-            raise UserNotExistsException(user_id)
-
-        return map_user_orm_to_model(user_to_get)
-
-    def delete_user(self, get_model: GetUserDTO) -> None:
-        user_id = get_model.id
-        user_to_del: UserORM = self._session.exec(
-            select(UserORM).where(UserORM.id == user_id)
-        ).first()
-
-        if user_to_del is None:
-            raise UserNotExistsException(user_id)
-
-        self._session.delete(user_to_del)
+    def delete_user(self, user: User) -> None:
+        connected_user = self._session.merge(user)
+        self._session.delete(connected_user)

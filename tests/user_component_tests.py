@@ -4,14 +4,13 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi.testclient import TestClient
 from redis import Redis
-from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session
 
 from src.config.Config import Config
 from dependencies import get_uow
 from src.infrastructure.UnitOfWorkProvider import UnitOfWorkProvider
 from main import app
-from src.plugins.user.repositories.postgres.orm.UserORM import UserORM
+from src.plugins.user.orm.UserORM import UserORM
 
 
 def make_app_client(config, client) -> TestClient:

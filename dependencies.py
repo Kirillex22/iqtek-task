@@ -10,10 +10,10 @@ try:
 except:
     raise ConfigurationException()
 
-
 def get_uow() -> BaseUnitOfWork:
     return uow_provider.get_uow()
 
 
 def get_user_service() -> UserService:
     return UserService()
+

@@ -2,5 +2,6 @@ from dataclasses import dataclass
 
 
 @dataclass
-class CreateUserDTO:
+class UpdateUserDTO:
+    id: int
     full_name: str

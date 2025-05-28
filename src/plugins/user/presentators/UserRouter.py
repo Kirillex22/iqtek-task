@@ -2,61 +2,70 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from dependencies import get_uow, get_user_service
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
-from src.plugins.user.dto.CreateUserDTO import CreateUserDTO
-from src.plugins.user.dto.GetUserDTO import GetUserDTO
+from src.plugins.user.dto.UserDTO import UserDTO
 from src.plugins.user.entities.User import User
 from src.plugins.user.services.UserService import UserService
 from src.common.exceptions.UserServiceExceptions import (
     UserAlreadyExistsException,
     UserNotExistsException
 )
+from src.plugins.user.views.UpdateUserView import UpdateUserView
+from src.plugins.user.views.CreateUserView import CreateUserView
+from src.plugins.user.views.Mappers import map_user_model_to_user_view, map_create_user_view_to_dto, \
+    map_update_user_view_to_dto, map_user_dto_to_user_view
+from src.plugins.user.views.UserView import UserView
 
 user_router = APIRouter(prefix="/users", tags=["users"])
 
 
-@user_router.post("/", response_model=User)
+@user_router.post("/", response_model=UserView)
 def create_user(
-        create_model: CreateUserDTO,
+        create_model: CreateUserView,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
     try:
-        return service.create_user(create_model, uow)
+        dto_to_create = map_create_user_view_to_dto(create_model)
+        dto_to_return: UserDTO = service.create_user(dto_to_create, uow)
+        return map_user_dto_to_user_view(dto_to_return)
     except UserAlreadyExistsException as e:
         raise HTTPException(status_code=409, detail=str(e))
 
 
-@user_router.post("/{user_id}", response_model=User)
+@user_router.get("/{user_id}", response_model=UserView)
 def get_user(
-        get_model: GetUserDTO,
+        user_id: int,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
     try:
-        return service.get_user(get_model, uow)
+        user_dto: UserDTO = service.get_user(user_id, uow)
+        return map_user_dto_to_user_view(user_dto)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@user_router.put("/", response_model=User)
+@user_router.put("/", response_model=UserView)
 def update_user(
-        user: User,
+        user: UpdateUserView,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
     try:
-        return service.update_user(user, uow)
+        dto = map_update_user_view_to_dto(user)
+        dto_to_return: UserDTO = service.update_user(dto, uow)
+        return map_user_dto_to_user_view(dto_to_return)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@user_router.delete("/{user_id}", status_code=204)
+@user_router.delete("/{user_id}", status_code=201)
 def delete_user(
-        get_model: GetUserDTO,
+        user_id: int,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
     try:
-        service.delete_user(get_model, uow)
+        service.delete_user(user_id, uow)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))

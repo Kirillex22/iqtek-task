@@ -1,8 +1,15 @@
-from typing import Optional
-
-from pydantic import BaseModel
+from dataclasses import dataclass, asdict
 
 
-class User(BaseModel):
-    id: int | None = None
-    full_name: Optional[str]
+@dataclass
+class User:
+    id: int | None
+    full_name: str
+
+    def update(self, data):
+        for key, value in asdict(data).items():
+            if key != 'id':
+                setattr(self, key, value)
+
+
+# сделать интеграционные тесты
