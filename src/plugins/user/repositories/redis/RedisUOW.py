@@ -7,7 +7,7 @@ from src.plugins.user.repositories.redis.RedisUserRepository import RedisUserRep
 class RedisUnitOfWork(BaseUnitOfWork):
     def __init__(self, redis: Redis, prefix: str = "user:"):
         self._redis = redis
-        self.user_repository = RedisUserRepository(redis, prefix)
+        self.user_repository = RedisUserRepository(redis, prefix=prefix)
 
     def __enter__(self) -> "RedisUnitOfWork":
         return self

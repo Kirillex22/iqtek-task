@@ -26,7 +26,7 @@ class UnitOfWorkProvider:
             if self.config.postgres_data and not self.session_factory:
                 db_url = self.config.postgres_data.generate_url()
                 self.session_factory = SQLAlchemySessionFactory(db_url)
-                register_map(self.session_factory.get_engine())
+                register_map(self.session_factory.get_engine()) # инит орм для users
 
             return self._get_postgres_uow()
         elif db_type == DBType.REDIS:
@@ -35,7 +35,6 @@ class UnitOfWorkProvider:
                 self.session_factory = RedisSessionFactory(db_url, self.config.redis_data.password)
             return self._get_redis_uow()
 
-        # если объект конфигурации не удовлетворяет требованиям
         raise ConfigurationException()
 
     def _get_postgres_uow(self) -> PostgresUnitOfWork:
@@ -51,4 +50,4 @@ class UnitOfWorkProvider:
             redis = self.client
         else:
             redis = self.session_factory.get_session()
-        return RedisUnitOfWork(redis)
+        return RedisUnitOfWork(redis, self.session_factory.get_counter_script())

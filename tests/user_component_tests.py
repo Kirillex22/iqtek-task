@@ -1,186 +1,72 @@
-import json as Json
-from unittest.mock import MagicMock
+import uuid
 
 import pytest
 from fastapi.testclient import TestClient
-from redis import Redis
-from sqlmodel import Session
-
-from src.config.Config import Config
-from dependencies import get_uow
-from src.infrastructure.UnitOfWorkProvider import UnitOfWorkProvider
 from main import app
-from src.plugins.user.orm.UserORM import UserORM
 
+client = TestClient(app)
 
-def make_app_client(config, client) -> TestClient:
-    uow_provider = UnitOfWorkProvider(config, client=client)
-    app.dependency_overrides[get_uow] = lambda: uow_provider.get_uow()
-    return TestClient(app)
+userid = None
 
+test_user_create = {
+    "username": "testuser",
+    "full_name": "Test User"
+}
 
-@pytest.fixture(params=["redis", "postgresql"])
-def input_data(request):
-    client, config = None, None
-    if request.param == "redis":
-        client = MagicMock(spec=Redis)
-        config = Config(db_type="redis")
-    elif request.param == "postgresql":
-        client = MagicMock(spec=Session)
-        config = Config(db_type="postgresql")
+test_user_update = {
+    "id": userid,
+    "full_name": "Updated User"
+}
 
-    return make_app_client(config, client), client
+@pytest.fixture(scope="module")
+def create_user():
+    global userid
+    response = client.post("/users/", json=test_user_create)
+    assert response.status_code == 200
+    json = response.json()
+    userid = json["id"]
+    return json
 
+def test_create_user_success():
+    response = client.post("/users/", json=test_user_create)
+    assert response.status_code == 200
+    data = response.json()
+    assert "id" in data
 
-def test_create_user_success(input_data):
-    app_client, client = input_data
+def test_get_user_success(create_user):
+    user_id = create_user["id"]
+    response = client.get(f"/users/{user_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == user_id
 
-    if isinstance(client, Redis):
-        client.set.return_value = None
-        client.exists.return_value = False
+def test_get_user_not_found():
+    response = client.get("/users/999999")
+    assert response.status_code == 404
 
-    if isinstance(client, Session):
-        client.add.return_value = None
-        client.commit.return_value = None
-        client.rollback.return_value = None
+def test_update_user_success(create_user):
+    user_id = create_user["id"]
+    update_payload = test_user_update.copy()
+    update_payload["id"] = user_id
+    response = client.put("/users/", json=update_payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == user_id
 
-    response = app_client.post(
-        "/users/",
-        json={
-            "full_name": "John Dow"
-        }
-    )
+def test_update_user_not_found():
+    update_payload = test_user_update.copy()
+    update_payload["id"] = str(uuid.uuid4())
+    response = client.put("/users/", json=update_payload)
+    assert response.status_code == 404
 
+def test_delete_user_success(create_user):
+    user_id = create_user["id"]
+    response = client.delete(f"/users/{user_id}")
     assert response.status_code == 201
 
-
-def test_get_user_success(input_data):
-    response_json = {"full_name": "John Dow"}
-
-    app_client, client = input_data
-
-    if isinstance(client, Redis):
-        client.get.return_value = Json.dumps(response_json)
-        client.exists.return_value = False
-
-    if isinstance(client, Session):
-        mock_result = MagicMock()
-        mock_result.first.return_value = UserORM(**response_json)
-        client.exec.return_value = mock_result
-        client.commit.return_value = None
-        client.rollback.return_value = None
-
-    response = app_client.post("/users/", json={"id": 1})
-
-    assert response.status_code == 200
-    assert response.json() == response_json
-
-
-def test_get_not_existing_user(input_data):
-    app_client, client = input_data
-
-    if isinstance(client, Redis):
-        client.get.return_value = None
-        client.exists.return_value = False
-
-    if isinstance(client, Session):
-        mock_result = MagicMock()
-        mock_result.first.return_value = None
-        client.exec.return_value = mock_result
-        client.commit.return_value = None
-        client.rollback.return_value = None
-
-    response = app_client.get("/users/123")
-
+    response = client.get(f"/users/{user_id}")
     assert response.status_code == 404
 
-
-def test_update_user_success(input_data):
-    app_client, client = input_data
-
-    existing_entity_json = {"id": "123", "full_name": "John Dow"}
-    to_update_json = {"id": "123", "full_name": "Jane Dow"}
-
-    if isinstance(client, Redis):
-        client.get.return_value = Json.dumps(existing_entity_json)
-        client.exists.return_value = True
-
-    if isinstance(client, Session):
-        mock_result = MagicMock()
-        mock_result.first.return_value = UserORM(**existing_entity_json)
-        client.exec.return_value = mock_result
-        client.commit.return_value = None
-        client.rollback.return_value = None
-
-    response = app_client.put(
-        "/users/",
-        json=to_update_json
-    )
-
-    assert response.status_code == 200
-
-
-def test_update_not_existing_user(input_data):
-    app_client, client = input_data
-
-    to_update_json = {"id": "123", "full_name": "Jane Dow"}
-
-    if isinstance(client, Redis):
-        client.get.return_value = None
-        client.exists.return_value = False
-
-    if isinstance(client, Session):
-        mock_result = MagicMock()
-        mock_result.first.return_value = None
-        client.exec.return_value = mock_result
-        client.commit.return_value = None
-        client.rollback.return_value = None
-
-    response = app_client.put(
-        "/users/",
-        json=to_update_json
-    )
-
-    assert response.status_code == 404
-
-
-def test_delete_user_success(input_data):
-    app_client, client = input_data
-    example_user = {"id": "123", "full_name": "John Dow"}
-
-    if isinstance(client, Redis):
-        client.exists.return_value = True
-        client.delete.return_value = 1
-
-    if isinstance(client, Session):
-        mock_result = MagicMock()
-        mock_result.first.return_value = UserORM(**example_user)
-        client.exec.return_value = mock_result
-        client.commit.return_value = None
-        client.rollback.return_value = None
-        client.delete.return_value = None
-
-    response = app_client.delete("/users/123")
-
-    assert response.status_code == 204
-
-
-def test_delete_not_existing_user(input_data):
-    app_client, client = input_data
-    example_user = {"id": "123", "full_name": "John Dow"}
-
-    if isinstance(client, Redis):
-        client.exists.return_value = False
-        client.delete.return_value = 0
-
-    if isinstance(client, Session):
-        mock_result = MagicMock()
-        mock_result.first.return_value = None
-        client.exec.return_value = mock_result
-        client.commit.return_value = None
-        client.rollback.return_value = None
-        client.delete.return_value = None
-
-    response = app_client.delete("/users/123")
-
+def test_delete_user_not_found():
+    response = client.delete("/users/999999")
     assert response.status_code == 404

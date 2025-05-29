@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
 
 from dependencies import get_uow, get_user_service
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
 from src.plugins.user.dto.UserDTO import UserDTO
-from src.plugins.user.entities.User import User
 from src.plugins.user.services.UserService import UserService
 from src.common.exceptions.UserServiceExceptions import (
     UserAlreadyExistsException,
@@ -11,7 +12,7 @@ from src.common.exceptions.UserServiceExceptions import (
 )
 from src.plugins.user.views.UpdateUserView import UpdateUserView
 from src.plugins.user.views.CreateUserView import CreateUserView
-from src.plugins.user.views.Mappers import map_user_model_to_user_view, map_create_user_view_to_dto, \
+from src.plugins.user.views.Mappers import map_create_user_view_to_dto, \
     map_update_user_view_to_dto, map_user_dto_to_user_view
 from src.plugins.user.views.UserView import UserView
 
@@ -34,7 +35,7 @@ def create_user(
 
 @user_router.get("/{user_id}", response_model=UserView)
 def get_user(
-        user_id: int,
+        user_id: UUID,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
@@ -47,13 +48,14 @@ def get_user(
 
 @user_router.put("/", response_model=UserView)
 def update_user(
+        user_id: UUID,
         user: UpdateUserView,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):
     try:
-        dto = map_update_user_view_to_dto(user)
-        dto_to_return: UserDTO = service.update_user(dto, uow)
+        dto = map_update_user_view_to_dto(user_id, user)
+        dto_to_return: UserDTO = service.update_user(user_id, dto, uow)
         return map_user_dto_to_user_view(dto_to_return)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -61,7 +63,7 @@ def update_user(
 
 @user_router.delete("/{user_id}", status_code=201)
 def delete_user(
-        user_id: int,
+        user_id: UUID,
         uow: BaseUnitOfWork = Depends(get_uow),
         service: UserService = Depends(get_user_service)
 ):

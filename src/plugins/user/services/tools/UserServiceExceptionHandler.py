@@ -9,3 +9,6 @@ class UserServiceExceptionHandler:
 
         elif isinstance(exc, UserNotExistsException):
             raise exc
+
+        else:
+            raise exc

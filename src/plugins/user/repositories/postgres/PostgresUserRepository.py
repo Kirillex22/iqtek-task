@@ -1,3 +1,4 @@
+from uuid import UUID
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
@@ -13,11 +14,10 @@ class PostgresUserRepository(BaseUserRepository):
     def __init__(self, session: Session):
         self._session = session
 
-    def create_user(self, user_data: CreateUserDTO) -> UserDTO:
+    def create_user(self, user: User) -> UserDTO:
         try:
-            user = map_create_user_dto_to_user(user_data)
             self._session.add(user)
-            self._session.flush() # todo: мб включить autoflush???
+            self._session.flush()
             return map_user_to_user_dto(user)
         except SQLAlchemyError:
             raise UnknownUserException()
@@ -27,7 +27,7 @@ class PostgresUserRepository(BaseUserRepository):
         self._session.flush()
         return map_user_to_user_dto(user)
 
-    def get_user(self, user_id: int) -> UserDTO | None:
+    def get_user(self, user_id: UUID) -> UserDTO | None:
         fetched_user: User | None = self._session.query(User).filter_by(id=user_id).first()
         if fetched_user is None:
             return None

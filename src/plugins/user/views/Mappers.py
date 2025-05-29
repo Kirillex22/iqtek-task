@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from src.plugins.user.dto.CreateUserDTO import CreateUserDTO
 from src.plugins.user.dto.UpdateUserDTO import UpdateUserDTO
 from src.plugins.user.dto.UserDTO import UserDTO
@@ -16,5 +18,5 @@ def map_user_dto_to_user_view(user_dto: UserDTO):
 def map_create_user_view_to_dto(user: CreateUserView):
     return CreateUserDTO(full_name=user.full_name)
 
-def map_update_user_view_to_dto(user: UpdateUserView):
-    return UpdateUserDTO(id=user.id, full_name=user.full_name)
+def map_update_user_view_to_dto(user_id: UUID, user: UpdateUserView):
+    return UpdateUserDTO(id=user_id, full_name=user.full_name)

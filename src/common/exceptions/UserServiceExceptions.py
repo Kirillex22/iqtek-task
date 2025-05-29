@@ -1,3 +1,6 @@
+from uuid import UUID
+
+
 class UserAlreadyExistsException(Exception):
     code = "ALREADY_EXISTS"
 
@@ -8,7 +11,7 @@ class UserAlreadyExistsException(Exception):
 class UserNotExistsException(Exception):
     code = "NOT_EXISTS"
 
-    def __init__(self, user_id: int):
+    def __init__(self, user_id: UUID):
         super().__init__(f"Пользователь {user_id} не найден в БД.")
 
 
