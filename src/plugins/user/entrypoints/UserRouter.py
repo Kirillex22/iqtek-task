@@ -8,7 +8,7 @@ from src.plugins.user.dto.UserDTO import UserDTO
 from src.plugins.user.services.UserService import UserService
 from src.common.exceptions.UserServiceExceptions import (
     UserAlreadyExistsException,
-    UserNotExistsException
+    UserNotExistsException, EntityValidationException
 )
 from src.plugins.user.views.UpdateUserView import UpdateUserView
 from src.plugins.user.views.CreateUserView import CreateUserView
@@ -31,6 +31,8 @@ def create_user(
         return map_user_dto_to_user_view(dto_to_return)
     except UserAlreadyExistsException as e:
         raise HTTPException(status_code=409, detail=str(e))
+    except EntityValidationException as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @user_router.get("/{user_id}", response_model=UserView)
@@ -59,6 +61,8 @@ def update_user(
         return map_user_dto_to_user_view(dto_to_return)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
+    except EntityValidationException as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @user_router.delete("/{user_id}", status_code=201)

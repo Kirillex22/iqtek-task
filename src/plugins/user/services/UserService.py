@@ -1,6 +1,4 @@
 import uuid
-from functools import wraps
-from typing import Callable, Optional
 from uuid import UUID
 
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
@@ -9,20 +7,7 @@ from src.plugins.user.dto.CreateUserDTO import CreateUserDTO
 from src.plugins.user.dto.Mappers import map_user_dto_to_user, map_create_user_dto_to_user
 from src.plugins.user.dto.UpdateUserDTO import UpdateUserDTO
 from src.plugins.user.dto.UserDTO import UserDTO
-from src.plugins.user.services.tools.UserServiceExceptionHandler import UserServiceExceptionHandler
-
-
-def uow_wrapper(func) -> Callable:
-    @wraps(func)
-    def wrapper(self, *args, **kwargs) -> Optional:
-        try:
-            result = func(self, *args, **kwargs)
-            return result
-        except Exception as e:
-            self.exception_handler.handle(e)
-            return None
-
-    return wrapper
+from src.plugins.user.services.tools.UserServiceExceptionHandler import UserServiceExceptionHandler, uow_wrapper
 
 
 class UserService:

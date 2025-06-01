@@ -2,7 +2,7 @@ import uuid
 from sqlalchemy import Table, Column, String, UUID
 from sqlalchemy.orm import registry
 
-from src.plugins.user.entities.User import User
+from src.plugins.user.orm.UserInDB import UserInDB
 
 mapper_registry = registry()
 
@@ -14,5 +14,5 @@ user_table = Table(
  )
 
 def register_map(engine):
-    mapper_registry.map_imperatively(User, user_table)
+    mapper_registry.map_imperatively(UserInDB, user_table)
     mapper_registry.metadata.create_all(engine)
