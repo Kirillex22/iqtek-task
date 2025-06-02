@@ -24,5 +24,6 @@ class User:
     def full_name(self, value):
         words_count = len(value.split())
         if words_count != 3:
-            raise EntityValidationException(f'Words count in {value} should be 3')
+            raise EntityValidationException(f'Words count in /{value}/ should be 3')
         self._full_name = value
+
