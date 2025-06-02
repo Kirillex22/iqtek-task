@@ -1,0 +1,25 @@
+from uuid import UUID
+
+
+class UserAlreadyExistsException(Exception):
+    code = "ALREADY_EXISTS"
+
+    def __init__(self):
+        super().__init__(f"Пользователь уже существует в БД.")
+
+
+class UserNotExistsException(Exception):
+    code = "NOT_EXISTS"
+
+    def __init__(self, user_id: UUID):
+        super().__init__(f"Пользователь {user_id} не найден в БД.")
+
+
+class UnknownUserException(Exception):
+    code = "UNKNOWN"
+
+    def __init__(self):
+        super().__init__(f"Неизвестная ошибка при операции с пользователем.")
+
+class EntityValidationException(Exception):
+    pass
