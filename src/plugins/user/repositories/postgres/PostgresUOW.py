@@ -5,7 +5,6 @@ from src.common.base.BaseUnitOfWork import BaseUnitOfWork
 from src.plugins.user.repositories.postgres.PostgresUserRepository import PostgresUserRepository
 from src.common.exceptions.UserServiceExceptions import UserAlreadyExistsException
 
-
 class PostgresUnitOfWork(BaseUnitOfWork):
     def __init__(self, session: Session):
         self._session = session

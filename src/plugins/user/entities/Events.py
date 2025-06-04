@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 
 @dataclass
@@ -6,5 +7,6 @@ class BaseUserEvent:
     pass
 
 @dataclass
-class SettingInvalidNameEvent(BaseUserEvent):
-    target_name: str
+class UserCreatedEvent(BaseUserEvent):
+    id: UUID
+

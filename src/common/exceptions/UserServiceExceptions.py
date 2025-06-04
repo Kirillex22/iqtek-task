@@ -21,5 +21,5 @@ class UnknownUserException(Exception):
     def __init__(self):
         super().__init__(f"Неизвестная ошибка при операции с пользователем.")
 
-class EntityValidationException(Exception):
+class InvalidUserFullNameException(Exception):
     pass

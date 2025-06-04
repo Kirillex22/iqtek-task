@@ -7,7 +7,7 @@ from src.plugins.user.entities.User import User
 
 
 def map_create_user_dto_to_user(user_id: UUID, user_to_create: CreateUserDTO) -> User:
-    return User(id=user_id, full_name=user_to_create.full_name)
+    return User(id=user_id, full_name=user_to_create.full_name, already_registered=False)
 
 def map_user_to_user_dto(user: User) -> UserDTO:
     return UserDTO(id=user.id, full_name=user.full_name)

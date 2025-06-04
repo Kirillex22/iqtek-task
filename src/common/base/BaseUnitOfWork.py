@@ -15,6 +15,12 @@ class BaseUnitOfWork(ABC):
         else:
             self.commit()
 
+    def collect_new_events(self):
+        for item in self.user_repository.seen:
+            while item.events:
+                event = item.events.pop(0)
+                yield event
+
     @abstractmethod
     def commit(self):
         raise NotImplementedError()

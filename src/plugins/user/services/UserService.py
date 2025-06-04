@@ -1,13 +1,11 @@
 import uuid
 from uuid import UUID
 
-from src.plugins.user.services import MessageBus
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
-from src.common.exceptions.UserServiceExceptions import UserNotExistsException, EntityValidationException
-from src.plugins.user.dto.CreateUserDTO import CreateUserDTO
+from src.common.exceptions.UserServiceExceptions import UserNotExistsException
 from src.plugins.user.dto.Mappers import map_create_user_dto_to_user
 from src.plugins.user.dto.UpdateUserDTO import UpdateUserDTO
-from src.plugins.user.entities.Events import SettingInvalidNameEvent
+from src.plugins.user.entities.Commands import CreateUserCommand
 from src.plugins.user.entities.User import User
 from src.plugins.user.services.tools.UserServiceExceptionHandler import UserServiceExceptionHandler, uow_wrapper
 
@@ -17,16 +15,10 @@ class UserService:
         self.exception_handler = UserServiceExceptionHandler()
 
     @uow_wrapper
-    def create_user(self, create_model: CreateUserDTO, uow: BaseUnitOfWork) -> User:
+    def create_user(self, create_model: CreateUserCommand, uow: BaseUnitOfWork) -> User:
         with uow:
             user_id = uuid.uuid4()
-            try:
-                user = map_create_user_dto_to_user(user_id, create_model)
-            except EntityValidationException as e:
-                event = SettingInvalidNameEvent(target_name=create_model.full_name)
-                MessageBus.handle(event)
-                raise e
-
+            user = map_create_user_dto_to_user(user_id, create_model)
             created_user = uow.user_repository.create_user(user)
         return created_user
 
@@ -36,13 +28,7 @@ class UserService:
             target = uow.user_repository.get_user(user_id)
             if target is None:
                 raise UserNotExistsException(user_id)
-            try:
-                target.full_name = data_to_update.full_name
-            except EntityValidationException as e:
-                event = SettingInvalidNameEvent(target_name=data_to_update.full_name)
-                MessageBus.handle(event)
-                raise e
-
+            target.full_name = data_to_update.full_name
             updated_user = uow.user_repository.update_user(target)
         return updated_user
 

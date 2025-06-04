@@ -4,11 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from dependencies import get_uow, get_user_service
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
+from src.plugins.user.entities.Commands import CreateUserCommand
 from src.plugins.user.entities.User import User
+from src.plugins.user.services import MessageBus
 from src.plugins.user.services.UserService import UserService
 from src.common.exceptions.UserServiceExceptions import (
     UserAlreadyExistsException,
-    UserNotExistsException, EntityValidationException
+    UserNotExistsException, InvalidUserFullNameException
 )
 from src.plugins.user.views.UpdateUserView import UpdateUserView
 from src.plugins.user.views.CreateUserView import CreateUserView
@@ -26,12 +28,16 @@ def create_user(
         service: UserService = Depends(get_user_service)
 ):
     try:
-        dto_to_create = map_create_user_view_to_dto(create_model)
-        user: User = service.create_user(dto_to_create, uow)
-        return map_user_model_to_user_view(user)
+        # dto_to_create = map_create_user_view_to_dto(create_model)
+        # user: User = service.create_user(dto_to_create, uow)
+        # return map_user_model_to_user_view(user)
+        create_event = CreateUserCommand(**create_model.model_dump())
+        result = MessageBus.handle(create_event, uow=uow)[0]
+        return map_user_model_to_user_view(result)
+
     except UserAlreadyExistsException as e:
         raise HTTPException(status_code=409, detail=str(e))
-    except EntityValidationException as e:
+    except InvalidUserFullNameException as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 

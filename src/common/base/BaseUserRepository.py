@@ -1,9 +1,13 @@
 from abc import ABC, abstractmethod
+from typing import Set
 from uuid import UUID
 from src.plugins.user.entities.User import User
 
 
 class BaseUserRepository(ABC):
+    def __init__(self):
+        self.seen: Set[User] = set()
+
     @abstractmethod
     def create_user(self, user: User) -> User:
         raise NotImplementedError()
