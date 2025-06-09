@@ -1,6 +1,8 @@
 from uuid import UUID
 
-from src.common.exceptions.UserServiceExceptions import InvalidUserFullNameException
+from sqlalchemy.testing.pickleable import User
+
+from src.common.exceptions.UserServiceExceptions import InvalidUserFullNameException, InvalidUserIdException
 from src.plugins.user.entities.Events import UserCreatedEvent, UserUpdatedEvent, UserDeletedEvent
 
 
@@ -16,6 +18,8 @@ class User:
 
     @id.setter
     def id(self, id: UUID):
+        if type(id) is not UUID:
+            raise InvalidUserIdException
         self._id = id
 
     @property
@@ -39,3 +43,15 @@ class User:
 
     def commit_full_name_change(self, old_full_name: str):
         self.events.append(UserUpdatedEvent(id=self._id, full_name=self._full_name, old_full_name=old_full_name))
+
+    def json(self):
+        return {
+            'id': str(self.id),
+            'full_name': self.full_name
+        }
+
+    @staticmethod
+    def from_json(json: dict) -> User:
+        id = UUID(json['id'])
+        full_name = json['full_name']
+        return User(id, full_name)

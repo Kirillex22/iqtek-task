@@ -10,54 +10,64 @@ from src.plugins.user.services.Handlers import EVENT_HANDLERS, COMMAND_HANDLERS
 
 Message = Union[BaseUserEvent, BaseUserCommand]
 
-def handle(message: Message, uow: BaseUnitOfWork) -> List | None:
-    queue = [message]
-    results = []
-    while queue:
-        message = queue.pop(0)
+class MessageBus:
+    def __init__(self, uow: BaseUnitOfWork, event_handlers, command_handlers):
+        self._uow = uow
+        self._event_handlers = event_handlers
+        self._command_handlers = command_handlers
 
-        if isinstance(message, BaseUserEvent):
-            handle_event(message, queue, uow)
+    def handle(self, message: Message) -> List | None:
+        queue = [message]
+        results = []
+        while queue:
+            message = queue.pop(0)
 
-        elif isinstance(message, BaseUserCommand):
-            results.append(
-                handle_command(message, queue, uow)
-            )
+            if isinstance(message, BaseUserEvent):
+                self.handle_event(message, queue)
 
-        else:
-            raise Exception(f"Unknown event type: {type(message)}")
+            elif isinstance(message, BaseUserCommand):
+                results.append(
+                    self.handle_command(message, queue)
+                )
 
-    return results
+            else:
+                raise Exception(f"Unknown event type: {type(message)}")
 
-def handle_event(event: BaseUserEvent, queue: List[Message], uow: BaseUnitOfWork):
-    for handler in EVENT_HANDLERS[type(event)]:
+        return results
+
+    def handle_event(
+            self,
+            event: BaseUserEvent,
+            queue: List[Message]
+    ):
+        for handler in self._event_handlers[type(event)]:
+            try:
+                for attempt in Retrying(
+                    stop=stop_after_attempt(3),
+                    wait=wait_exponential(),
+                    after=lambda retry_state: logging.warning(retry_state.outcome.exception())
+                ):
+                    with attempt:
+                        logging.debug('Обработка события %s обработчиком %s', event, handler)
+                        handler(event, uow=self._uow)
+                        queue.extend(self._uow.collect_new_events())
+            except RetryError as retry_failure:
+                logging.error(
+                    f'Не удалось обработать событие после {retry_failure.last_attempt.attempt_number} попыток: {event}'
+                )
+                continue
+
+
+    def handle_command(
+        self,
+        command: BaseUserCommand,
+        queue: List[Message],
+    ):
         try:
-            for attempt in Retrying(
-                stop=stop_after_attempt(3),
-                wait=wait_exponential(),
-                after=lambda retry_state: logging.warning(retry_state.outcome.exception())
-            ):
-                with attempt:
-                    logging.debug('Обработка события %s обработчиком %s', event, handler)
-                    handler(event, uow=uow)
-                    queue.extend(uow.collect_new_events())
-        except RetryError as retry_failure:
-            logging.error(
-                f'Не удалось обработать событие после {retry_failure.last_attempt.attempt_number} попыток: {event}'
-            )
-            continue
-
-
-def handle_command(
-    command: BaseUserCommand,
-    queue: List[Message],
-    uow: BaseUnitOfWork,
-):
-    try:
-        handler = COMMAND_HANDLERS[type(command)][0]
-        result = handler(command, uow=uow)
-        queue.extend(uow.collect_new_events())
-        return result
-    except Exception:
-        print(f"Exception while handling command: {command}")
-        raise
+            handler = self._command_handlers[type(command)][0]
+            result = handler(command, uow=self._uow)
+            queue.extend(self._uow.collect_new_events())
+            return result
+        except Exception:
+            print(f"Exception while handling command: {command}")
+            raise

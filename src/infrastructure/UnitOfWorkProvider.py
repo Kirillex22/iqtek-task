@@ -1,20 +1,17 @@
-from typing import Optional, Union
-
-from redis import Redis
-from sqlmodel import Session
+from typing import Optional
 
 from src.common.exceptions.InfrastructureExceptions import ConfigurationException
 from src.config.Config import DBType, Config
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
-from src.infrastructure.RedisSessionFactory import RedisSessionFactory
-from src.infrastructure.SQLAlchemySessionFactory import SQLAlchemySessionFactory
+from src.plugins.user.repositories.redis.RedisSessionFactory import RedisSessionFactory
+from src.plugins.user.repositories.postgres.SQLAlchemySessionFactory import SQLAlchemySessionFactory
 from src.plugins.user.orm.UserORM import register_map
-from src.plugins.user.repositories.postgres.PostgresUOW import PostgresUnitOfWork
+from src.plugins.user.repositories.postgres.SQLAlchemyUOW import SQLAlchemyUnitOfWork
 from src.plugins.user.repositories.redis.RedisUOW import RedisUnitOfWork
 
 
 class UnitOfWorkProvider:
-    def __init__(self, config: Config, client: Optional[Union[Session, Redis]] = None):
+    def __init__(self, config: Config, client = None):
         self.config = config
         self.client = client
         self.session_factory = None
@@ -29,25 +26,28 @@ class UnitOfWorkProvider:
                 register_map(self.session_factory.get_engine()) # инит орм для users
 
             return self._get_postgres_uow()
+
         elif db_type == DBType.REDIS:
             if self.config.redis_data and not self.session_factory:
                 db_url = self.config.redis_data.generate_url()
                 self.session_factory = RedisSessionFactory(db_url, self.config.redis_data.password)
+
             return self._get_redis_uow()
 
-        raise ConfigurationException()
+        raise ConfigurationException(f"Указанный тип БД не поддерживается.")
 
-    def _get_postgres_uow(self) -> PostgresUnitOfWork:
+    def _get_postgres_uow(self) -> SQLAlchemyUnitOfWork:
         if self.client:
-            session = self.client
+            session_factory = self.client
         else:
-            session = self.session_factory.get_session()
-        return PostgresUnitOfWork(session)
+            session_factory = self.session_factory
+        return SQLAlchemyUnitOfWork(session_factory)
 
     def _get_redis_uow(self) -> RedisUnitOfWork:
 
         if self.client:
-            redis = self.client
+            redis_factory = self.client
         else:
-            redis = self.session_factory.get_session()
-        return RedisUnitOfWork(redis, self.session_factory.get_counter_script())
+            redis_factory = self.session_factory
+
+        return RedisUnitOfWork(redis_factory)

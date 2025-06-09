@@ -23,3 +23,6 @@ class UnknownUserException(Exception):
 
 class InvalidUserFullNameException(Exception):
     pass
+
+class InvalidUserIdException(Exception):
+    pass

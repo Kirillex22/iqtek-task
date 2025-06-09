@@ -9,7 +9,7 @@ from src.plugins.user.entities.User import User
 from src.common.exceptions.UserServiceExceptions import UnknownUserException
 
 
-class PostgresUserRepository(BaseUserRepository):
+class SQLAlchemyUserRepository(BaseUserRepository):
     def __init__(self, session: Session):
         super().__init__()
         self._session = session
