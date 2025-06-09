@@ -1,12 +1,11 @@
 import logging
+import asyncio
 from typing import List, Union
 from tenacity import Retrying, RetryError, stop_after_attempt, wait_exponential
 
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
 from src.plugins.user.entities.Commands import BaseUserCommand
 from src.plugins.user.entities.Events import BaseUserEvent
-from src.plugins.user.services.Handlers import EVENT_HANDLERS, COMMAND_HANDLERS
-
 
 Message = Union[BaseUserEvent, BaseUserCommand]
 
@@ -16,14 +15,14 @@ class MessageBus:
         self._event_handlers = event_handlers
         self._command_handlers = command_handlers
 
-    def handle(self, message: Message) -> List | None:
+    async def handle(self, message: Message) -> List | None:
         queue = [message]
         results = []
         while queue:
             message = queue.pop(0)
 
             if isinstance(message, BaseUserEvent):
-                self.handle_event(message, queue)
+                asyncio.create_task(self.handle_event(message, queue))
 
             elif isinstance(message, BaseUserCommand):
                 results.append(
@@ -35,7 +34,7 @@ class MessageBus:
 
         return results
 
-    def handle_event(
+    async def handle_event(
             self,
             event: BaseUserEvent,
             queue: List[Message]
@@ -48,8 +47,7 @@ class MessageBus:
                     after=lambda retry_state: logging.warning(retry_state.outcome.exception())
                 ):
                     with attempt:
-                        logging.debug('Обработка события %s обработчиком %s', event, handler)
-                        handler(event, uow=self._uow)
+                        await handler(event, uow=self._uow)
                         queue.extend(self._uow.collect_new_events())
             except RetryError as retry_failure:
                 logging.error(

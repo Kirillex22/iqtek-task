@@ -1,9 +1,9 @@
-db_type: redis
+db_type: postgresql
 postgres_data:
   username: postgres
   password: postgres
   host: localhost
-  db_name: test
+  db_name: postgres
 redis_data:
   host: localhost
   port: 6379

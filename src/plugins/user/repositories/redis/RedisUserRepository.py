@@ -8,6 +8,16 @@ from src.common.exceptions.UserServiceExceptions import UserNotExistsException, 
     UserAlreadyExistsException
 from src.plugins.user.entities.User import User
 
+def to_json(user: User) -> dict:
+    return {
+        'id': str(user.id),
+        'full_name': user.full_name
+    }
+
+def from_json(json: dict) -> User:
+    id = UUID(json['id'])
+    full_name = json['full_name']
+    return User(id, full_name)
 
 class RedisUserRepository(BaseUserRepository):
     def __init__(self, redis: Redis, prefix: str = "user:"):
@@ -19,18 +29,17 @@ class RedisUserRepository(BaseUserRepository):
         return f"{self.prefix}{user_id}"
 
     def create_user(self, user: User) -> User:
-        # user.id должен быть уже UUID, сгенерированный заранее
         key = self._key(user.id)
         try:
             if self.redis.exists(key):
                 raise UserAlreadyExistsException()
 
-            self.redis.set(key, json.dumps(user.json()))
+            self.redis.set(key, json.dumps(to_json(user)))
             saved_user_raw = self.redis.get(key)
             if saved_user_raw is None:
                 raise UnknownUserException()
 
-            saved_user = User.from_json(json.loads(saved_user_raw))
+            saved_user = from_json(json.loads(saved_user_raw))
             self.seen.add(saved_user)
             return saved_user
         except Exception as e:
@@ -42,12 +51,12 @@ class RedisUserRepository(BaseUserRepository):
             raise UserNotExistsException(user.id)
 
         try:
-            self.redis.set(key, json.dumps(user.json()))
+            self.redis.set(key, json.dumps(to_json(user)))
             saved_user_raw = self.redis.get(key)
             if saved_user_raw is None:
                 raise UnknownUserException()
 
-            saved_user = User.from_json(json.loads(saved_user_raw))
+            saved_user = from_json(json.loads(saved_user_raw))
             self.seen.add(saved_user)
             return saved_user
         except Exception as e:
@@ -59,7 +68,7 @@ class RedisUserRepository(BaseUserRepository):
         if user_data_raw is None:
             return None
 
-        user = User.from_json(json.loads(user_data_raw))
+        user = from_json(json.loads(user_data_raw))
         self.seen.add(user)
         return user
 

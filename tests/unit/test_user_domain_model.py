@@ -22,19 +22,3 @@ def test_user_creation_wrong_full_name():
     full_name = 'name name'
     with pytest.raises(InvalidUserFullNameException) as e:
         User(id=id, full_name=full_name)
-
-def test_user_creation_from_json():
-    id = uuid.uuid4()
-    full_name = 'name name name'
-    _json = {'id': str(id), 'full_name': full_name}
-    user = User.from_json(_json)
-
-def test_user_parse_to_json():
-    id = uuid.uuid4()
-    full_name = 'name name name'
-    _json = {'id': str(id), 'full_name': full_name}
-
-    user = User(id, full_name)
-    parsed = user.json()
-
-    assert parsed == _json

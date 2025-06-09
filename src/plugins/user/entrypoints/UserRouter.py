@@ -21,13 +21,13 @@ user_router = APIRouter(prefix="/users", tags=["users"])
 
 
 @user_router.post("/", response_model=UserView)
-def create_user(
+async def create_user(
         create_model: CreateUserView,
         message_bus: MessageBus = Depends(get_message_bus)
 ):
     try:
         create_cmd = CreateUserCommand(**create_model.model_dump())
-        result = message_bus.handle(create_cmd)[0]
+        result = (await message_bus.handle(create_cmd))[0]
         return map_user_model_to_user_view(result)
 
     except UserAlreadyExistsException as e:
@@ -50,14 +50,14 @@ def get_user(
 
 
 @user_router.put("/", response_model=UserView)
-def update_user(
+async def update_user(
         user_id: UUID,
         user: UpdateUserView,
         message_bus: MessageBus = Depends(get_message_bus)
 ):
     try:
         update_cmd = UpdateUserCommand(id=user_id, **user.model_dump())
-        result = message_bus.handle(update_cmd)[0]
+        result = (await message_bus.handle(update_cmd))[0]
         return map_user_model_to_user_view(result)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
@@ -66,12 +66,12 @@ def update_user(
 
 
 @user_router.delete("/{user_id}", status_code=201)
-def delete_user(
+async def delete_user(
         user_id: UUID,
         message_bus: MessageBus = Depends(get_message_bus)
 ):
     try:
         delete_cmd = DeleteUserCommand(id=user_id)
-        message_bus.handle(delete_cmd)
+        await message_bus.handle(delete_cmd)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
