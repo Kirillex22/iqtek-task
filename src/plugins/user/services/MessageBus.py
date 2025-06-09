@@ -1,17 +1,12 @@
-from typing import Dict, List, Callable, Type, Union
+import logging
+from typing import List, Union
+from tenacity import Retrying, RetryError, stop_after_attempt, wait_exponential
 
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
-from src.plugins.user.entities.Commands import BaseUserCommand, CreateUserCommand
-from src.plugins.user.entities.Events import BaseUserEvent, UserCreatedEvent
-from src.plugins.user.services.UserService import UserService
+from src.plugins.user.entities.Commands import BaseUserCommand
+from src.plugins.user.entities.Events import BaseUserEvent
+from src.plugins.user.services.Handlers import EVENT_HANDLERS, COMMAND_HANDLERS
 
-COMMAND_HANDLERS: Dict[Type[BaseUserCommand], List[Callable]] = {
-    CreateUserCommand: [lambda event, uow: UserService().create_user(event, uow)]
-}
-
-EVENT_HANDLERS: Dict[Type[BaseUserEvent], List[Callable]] = {
-    UserCreatedEvent: [lambda event, uow: print(f'ПОЛЬЗОВАТЕЛЬ {event.id} СОЗДАН АХАХАХАХАХАХАХХА')]
-}
 
 Message = Union[BaseUserEvent, BaseUserCommand]
 
@@ -34,17 +29,22 @@ def handle(message: Message, uow: BaseUnitOfWork) -> List | None:
 
     return results
 
-def handle_event(
-    event: BaseUserEvent,
-    queue: List[Message],
-    uow: BaseUnitOfWork,
-):
+def handle_event(event: BaseUserEvent, queue: List[Message], uow: BaseUnitOfWork):
     for handler in EVENT_HANDLERS[type(event)]:
         try:
-            handler(event, uow=uow)
-            queue.extend(uow.collect_new_events())
-        except Exception:
-            print(f"Exception while handling event: {event}")
+            for attempt in Retrying(
+                stop=stop_after_attempt(3),
+                wait=wait_exponential(),
+                after=lambda retry_state: logging.warning(retry_state.outcome.exception())
+            ):
+                with attempt:
+                    logging.debug('Обработка события %s обработчиком %s', event, handler)
+                    handler(event, uow=uow)
+                    queue.extend(uow.collect_new_events())
+        except RetryError as retry_failure:
+            logging.error(
+                f'Не удалось обработать событие после {retry_failure.last_attempt.attempt_number} попыток: {event}'
+            )
             continue
 
 

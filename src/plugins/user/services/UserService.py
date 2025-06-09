@@ -5,10 +5,9 @@ from src.common.base.BaseUnitOfWork import BaseUnitOfWork
 from src.common.exceptions.UserServiceExceptions import UserNotExistsException
 from src.plugins.user.dto.Mappers import map_create_user_dto_to_user
 from src.plugins.user.dto.UpdateUserDTO import UpdateUserDTO
-from src.plugins.user.entities.Commands import CreateUserCommand
 from src.plugins.user.entities.User import User
 from src.plugins.user.services.tools.UserServiceExceptionHandler import UserServiceExceptionHandler, uow_wrapper
-
+from src.plugins.user.entities.Commands import CreateUserCommand
 
 class UserService:
     def __init__(self):
@@ -19,6 +18,7 @@ class UserService:
         with uow:
             user_id = uuid.uuid4()
             user = map_create_user_dto_to_user(user_id, create_model)
+            user.commit_register()
             created_user = uow.user_repository.create_user(user)
         return created_user
 
@@ -28,7 +28,9 @@ class UserService:
             target = uow.user_repository.get_user(user_id)
             if target is None:
                 raise UserNotExistsException(user_id)
+            old_full_name = target.full_name
             target.full_name = data_to_update.full_name
+            target.commit_full_name_change(old_full_name)
             updated_user = uow.user_repository.update_user(target)
         return updated_user
 
@@ -44,6 +46,7 @@ class UserService:
     def delete_user(self, user_id: UUID, uow: BaseUnitOfWork) -> None:
         with uow:
             target = uow.user_repository.get_user(user_id)
+            target.commit_delete()
             if target is None:
                 raise UserNotExistsException(user_id)
             uow.user_repository.delete_user(target)

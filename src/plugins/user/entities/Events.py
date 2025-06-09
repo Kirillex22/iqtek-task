@@ -10,3 +10,14 @@ class BaseUserEvent:
 class UserCreatedEvent(BaseUserEvent):
     id: UUID
 
+@dataclass
+class UserUpdatedEvent(BaseUserEvent):
+    id: UUID
+    full_name: str
+    old_full_name: str
+
+@dataclass
+class UserDeletedEvent(BaseUserEvent):
+    id: UUID
+    full_name: str
+

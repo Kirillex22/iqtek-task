@@ -45,3 +45,4 @@ class PostgresUserRepository(BaseUserRepository):
         db_user = map_user_to_db_user_dto(user)
         connected_user = self._session.merge(db_user)
         self._session.delete(connected_user)
+        self.seen.add(user)

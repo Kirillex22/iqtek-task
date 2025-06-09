@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from dependencies import get_uow, get_user_service
 from src.common.base.BaseUnitOfWork import BaseUnitOfWork
-from src.plugins.user.entities.Commands import CreateUserCommand
+from src.plugins.user.entities.Commands import CreateUserCommand, UpdateUserCommand, DeleteUserCommand
 from src.plugins.user.entities.User import User
 from src.plugins.user.services import MessageBus
 from src.plugins.user.services.UserService import UserService
@@ -31,8 +31,8 @@ def create_user(
         # dto_to_create = map_create_user_view_to_dto(create_model)
         # user: User = service.create_user(dto_to_create, uow)
         # return map_user_model_to_user_view(user)
-        create_event = CreateUserCommand(**create_model.model_dump())
-        result = MessageBus.handle(create_event, uow=uow)[0]
+        create_cmd = CreateUserCommand(**create_model.model_dump())
+        result = MessageBus.handle(create_cmd, uow=uow)[0]
         return map_user_model_to_user_view(result)
 
     except UserAlreadyExistsException as e:
@@ -62,12 +62,14 @@ def update_user(
         service: UserService = Depends(get_user_service)
 ):
     try:
-        dto = map_update_user_view_to_dto(user_id, user)
-        user: User = service.update_user(user_id, dto, uow)
-        return map_user_model_to_user_view(user)
+        # dto = map_update_user_view_to_dto(user_id, user)
+        # user: User = service.update_user(user_id, dto, uow)
+        update_cmd = UpdateUserCommand(id=user_id, **user.model_dump())
+        result = MessageBus.handle(update_cmd, uow=uow)[0]
+        return map_user_model_to_user_view(result)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
-    except EntityValidationException as e:
+    except InvalidUserFullNameException as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -78,6 +80,8 @@ def delete_user(
         service: UserService = Depends(get_user_service)
 ):
     try:
-        service.delete_user(user_id, uow)
+        #service.delete_user(user_id, uow)
+        delete_cmd = DeleteUserCommand(id=user_id)
+        MessageBus.handle(delete_cmd, uow=uow)
     except UserNotExistsException as e:
         raise HTTPException(status_code=404, detail=str(e))
