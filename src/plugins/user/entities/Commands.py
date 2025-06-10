@@ -15,7 +15,7 @@ class CreateUserCommand(CreateUserDTO, BaseUserCommand):
 
 @dataclass
 class UpdateUserCommand(UpdateUserDTO, BaseUserCommand):
-    pass
+    id: UUID
 
 @dataclass
 class DeleteUserCommand(BaseUserCommand):
